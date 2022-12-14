@@ -33,7 +33,7 @@ class Game(arcade.Window):
     def on_draw(self):
         arcade.start_render()
         renderDotsArray()
-        drawLine()
+        line()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
