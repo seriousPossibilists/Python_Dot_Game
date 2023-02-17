@@ -2,11 +2,7 @@
 Program for a simple dot game
 """
 
-# TODO
-# [x] Add fields to point class
-# [x] Check for boxes
-# [] Create game end and scoring sys 
-
+import math
 import arcade
 from dataclasses import dataclass
 
@@ -20,6 +16,9 @@ LINE_ARR =[]
 PLAYER_1_SCORE = 0
 PLAYER_2_SCORE = 0
 TURN = 0
+PREV_LINES = 0
+PREV_BOXES = 0
+GAME_END = 0
 
 @dataclass
 class Point:
@@ -41,10 +40,15 @@ class Game(arcade.Window):
         arcade.start_render()
         renderDotsArray()
         if(len(LINE_ARR) >= 2):
-           for i in range(int(len(LINE_ARR) / 2)):
-                if(LINE_ARR[2 * i].x == LINE_ARR[2 * i + 1].x or LINE_ARR[2 * i].y == LINE_ARR[2 * i + 1].y):
+               for i in range(int(len(LINE_ARR) / 2)):
+                 if(LINE_ARR[2 * i].x == LINE_ARR[2 * i + 1].x or LINE_ARR[2 * i].y == LINE_ARR[2 * i + 1].y):
                     if(abs(LINE_ARR[2 * i].x - LINE_ARR[2 * i + 1].x) == 60 or abs(LINE_ARR[2 * i].y - LINE_ARR[2 * i + 1].y) == 60):
                         line(LINE_ARR[2 * i],LINE_ARR[2 * i + 1])
+                    else:
+                        line(LINE_ARR[2 * i],LINE_ARR[2 * i + 1])
+                        if(len(LINE_ARR) % 2 == 0): 
+                            LINE_ARR.pop(len(LINE_ARR) - 1)
+                            LINE_ARR.pop(len(LINE_ARR) - 1)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
@@ -71,28 +75,55 @@ def checkDotPress(x, y):
 
 def checkBox():
     global TURN
-    for i in range(len(DOTS_ARR)):
-        if(DOTS_ARR[i].connectedBottom == True and DOTS_ARR[i].connectedRight == True and DOTS_ARR[i - 1].connectedRight == True and DOTS_ARR[i + 5].connectedBottom == True):
-            checkTurn()
-        elif(DOTS_ARR[i].connectedTop == True and DOTS_ARR[i].connectedRight == True and DOTS_ARR[i + 1].connectedRight == True and DOTS_ARR[i + 5].connectedTop == True):
-            checkTurn()
-        elif(DOTS_ARR[i].connectedBottom == True and DOTS_ARR[i].connectedLeft == True and DOTS_ARR[i - 1].connectedRight == True and DOTS_ARR[i + 5].connectedBottom == True):
-            checkTurn()
-        elif(DOTS_ARR[i].connectedTop == True and DOTS_ARR[i].connectedLeft == True and DOTS_ARR[i + 1].connectedLeft == True and DOTS_ARR[i + 5].connectedTop == True):
-            checkTurn()
-
-def checkTurn():
-    global TURN
+    global PREV_BOXES
     global PLAYER_1_SCORE
     global PLAYER_2_SCORE
-    if(TURN % 2 == 0):
-        PLAYER_1_SCORE += 1
-    else:
-        PLAYER_2_SCORE += 1
-    TURN -= 1
+    num_boxes = 0
+    for i in range(len(DOTS_ARR)):
+        if(DOTS_ARR[i].connectedBottom == True and DOTS_ARR[i].connectedRight == True and DOTS_ARR[i - 1].connectedRight == True and DOTS_ARR[i + 5].connectedBottom == True):
+            num_boxes += 1
+    if(num_boxes > PREV_BOXES):
+        if TURN == 0:
+            TURN = 1
+        else:
+            TURN = 0  
+        print("New box formed")
+        if TURN == 0:
+            PLAYER_1_SCORE += (num_boxes - PREV_BOXES)
+        else:
+            PLAYER_2_SCORE += (num_boxes - PREV_BOXES)
+        PREV_BOXES = num_boxes
+        checkScore()
+
+def checkScore():
+    global GAME_END
+    global PREV_BOXES
+    global PLAYER_1_SCORE
+    global PLAYER_2_SCORE
+    print(PLAYER_1_SCORE, PLAYER_2_SCORE)
+    if(PREV_BOXES == 16 and GAME_END == 0):
+        print("All possible boxes formed")
+        if(PLAYER_1_SCORE > PLAYER_2_SCORE):
+            print("Player 1 won!")
+
+        elif(PLAYER_1_SCORE == PLAYER_2_SCORE):
+            print("Draw!")
+
+        else:
+            print("Player 2 won!")
+        GAME_END = 1
+
 
 def line(pt1, pt2):
+    global PREV_LINES
     global TURN
+    num_lines = math.floor(len(LINE_ARR) / 2)
+    if(num_lines > PREV_LINES):
+        PREV_LINES = num_lines
+        if TURN == 0:
+            TURN = 1
+        else:
+            TURN = 0      
     if(pt1.x > pt2.x):
         pt1.connectedLeft = True
         pt2.connectedRight = True
@@ -107,11 +138,9 @@ def line(pt1, pt2):
         pt2.connectedBottom = True
     checkBox()
     arcade.draw_line(pt1.x, pt1.y, pt2.x, pt2.y, arcade.color.WHITE, 3)
-    TURN += 1
         
 def main():
     window = Game(SCREEN_WIDTH, SCREEN_HEIGHT, "Game")
     arcade.run()
     print(PLAYER_1_SCORE, PLAYER_2_SCORE)
-
 main()
